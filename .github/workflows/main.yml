@@ -34,17 +34,23 @@ jobs:
 
       - name: Validate Bicep Template
         run: |
+          # Convert SSH URL to HTTPS format  
+          REPO_URL="https://github.com/${{ github.repository }}.git"
+          
           az deployment group validate \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --template-file infrastructure/main.bicep \
-            --parameters repositoryUrl=${{ github.repositoryUrl }}
+            --parameters repositoryUrl="$REPO_URL"
 
       - name: What-If Analysis
         run: |
+          # Convert SSH URL to HTTPS format
+          REPO_URL="https://github.com/${{ github.repository }}.git"
+          
           az deployment group what-if \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --template-file infrastructure/main.bicep \
-            --parameters repositoryUrl=${{ github.repositoryUrl }}
+            --parameters repositoryUrl="$REPO_URL"
 
   deploy:
     name: Deploy Infrastructure
@@ -52,6 +58,10 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/main'
     environment: production # This will require setting up GitHub environment
+    outputs:
+      staticWebAppName: ${{ steps.deploy.outputs.staticWebAppName }}
+      defaultHostname: ${{ steps.deploy.outputs.defaultHostname }}
+      deploymentToken: ${{ steps.deploy.outputs.deploymentToken }}
     
     steps:
       - name: Checkout
@@ -65,15 +75,23 @@ jobs:
       - name: Deploy Infrastructure
         id: deploy
         run: |
+          # Convert SSH URL to HTTPS format
+          REPO_URL="https://github.com/${{ github.repository }}.git"
+          
           az deployment group create \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --template-file infrastructure/main.bicep \
-            --parameters repositoryUrl=${{ github.repositoryUrl }} \
+            --parameters repositoryUrl="$REPO_URL" \
             --output json > deployment-output.json
           
           # Extract outputs for use in subsequent steps
           echo "staticWebAppName=$(jq -r '.properties.outputs.staticWebAppName.value' deployment-output.json)" >> $GITHUB_OUTPUT
           echo "defaultHostname=$(jq -r '.properties.outputs.defaultHostname.value' deployment-output.json)" >> $GITHUB_OUTPUT
+          
+          # Get the deployment token separately (needed for content deployment)
+          STATIC_WEB_APP_NAME=$(jq -r '.properties.outputs.staticWebAppName.value' deployment-output.json)
+          DEPLOYMENT_TOKEN=$(az staticwebapp secrets list --name "$STATIC_WEB_APP_NAME" --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query "properties.apiKey" --output tsv)
+          echo "deploymentToken=$DEPLOYMENT_TOKEN" >> $GITHUB_OUTPUT
 
       - name: Display Deployment Results
         run: |
@@ -108,7 +126,7 @@ jobs:
       - name: Deploy to Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ needs.deploy.outputs.deploymentToken }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
           app_location: '/dist' # Location of your built app
