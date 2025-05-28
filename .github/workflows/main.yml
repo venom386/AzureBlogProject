@@ -1,0 +1,116 @@
+name: Deploy Personal Blog Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths: ['infrastructure/**', '.github/workflows/**']
+  pull_request:
+    branches: [main]
+    paths: ['infrastructure/**']
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  AZURE_RESOURCE_GROUP: 'rg-personal-blog'
+  AZURE_LOCATION: 'East US 2'
+
+jobs:
+  validate:
+    name: Validate Infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name ${{ env.AZURE_RESOURCE_GROUP }} \
+            --location "${{ env.AZURE_LOCATION }}"
+
+      - name: Validate Bicep Template
+        run: |
+          az deployment group validate \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file infrastructure/main.bicep \
+            --parameters repositoryUrl=${{ github.repositoryUrl }}
+
+      - name: What-If Analysis
+        run: |
+          az deployment group what-if \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file infrastructure/main.bicep \
+            --parameters repositoryUrl=${{ github.repositoryUrl }}
+
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    environment: production # This will require setting up GitHub environment
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Infrastructure
+        id: deploy
+        run: |
+          az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file infrastructure/main.bicep \
+            --parameters repositoryUrl=${{ github.repositoryUrl }} \
+            --output json > deployment-output.json
+          
+          # Extract outputs for use in subsequent steps
+          echo "staticWebAppName=$(jq -r '.properties.outputs.staticWebAppName.value' deployment-output.json)" >> $GITHUB_OUTPUT
+          echo "defaultHostname=$(jq -r '.properties.outputs.defaultHostname.value' deployment-output.json)" >> $GITHUB_OUTPUT
+
+      - name: Display Deployment Results
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Static Web App Name: ${{ steps.deploy.outputs.staticWebAppName }}"
+          echo "Default Hostname: https://${{ steps.deploy.outputs.defaultHostname }}"
+          echo "Your blog is now available at: https://${{ steps.deploy.outputs.defaultHostname }}"
+
+  deploy-content:
+    name: Deploy Website Content
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (if using a build step)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build Website (customize based on your setup)
+        run: |
+          # Example for a simple static site
+          # If you're using a framework like React, Vue, etc., add your build commands here
+          echo "Building website content..."
+          mkdir -p dist
+          cp -r src/* dist/ 2>/dev/null || cp index.html dist/ 2>/dev/null || echo "No source files found - create your content!"
+
+      - name: Deploy to Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: '/dist' # Location of your built app
+          api_location: '' # Leave empty for Phase 1
+          output_location: '' # Leave empty since we're specifying built content
