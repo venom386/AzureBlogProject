@@ -3,31 +3,429 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Personal Blog</title>
-    <link rel="stylesheet" href="style.css">
+    <title>My DevOps Learning Journey - Blog</title>
+    <meta name="description" content="Following my journey from sysadmin to Infrastructure as Code - sharing wins, struggles, and everything I learn along the way.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #4f7cba 0%, #5a7484 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            top: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='m0 40l40-40h-40v40zm40 0v-40h-40l40 40z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-style: italic;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 2.5rem;
+        }
+
+        .intro-section {
+            background: #f8f9fa;
+            border-left: 4px solid #4a90a4;
+            padding: 1.5rem 2rem;
+            margin-bottom: 3rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .intro-section h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            border: none;
+            padding: 0;
+        }
+
+        .intro-section p {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .intro-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .posts-section h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 2rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #4a90a4;
+        }
+
+        .posts-grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .post-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .post-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #4a90a4;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 144, 164, 0.15);
+        }
+
+        .post-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #5a6c7d;
+        }
+
+        .post-date {
+            background: #e9ecef;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .post-category {
+            background: #4a90a4;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .post-card h3 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .post-card h3 a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .post-card h3 a:hover {
+            color: #4a90a4;
+        }
+
+        .post-excerpt {
+            color: #5a6c7d;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .read-more {
+            color: #4a90a4;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .read-more:hover {
+            color: #3a7a8a;
+            text-decoration: underline;
+        }
+
+        .read-more::after {
+            content: ' →';
+            margin-left: 0.25rem;
+        }
+
+        .coming-soon {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px dashed #4a90a4;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .coming-soon h3 {
+            color: #4a90a4;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .coming-soon p {
+            color: #5a6c7d;
+            font-style: italic;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            color: #5a6c7d;
+        }
+
+        .footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        .social-links {
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            color: #4a90a4;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .social-links a:hover {
+            color: #3a7a8a;
+            text-decoration: underline;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #4a90a4;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(74, 144, 164, 0.3);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(74, 144, 164, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                top: 1rem;
+                border-radius: 8px;
+            }
+            
+            .header {
+                padding: 2rem 1.5rem 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .intro-section {
+                padding: 1rem 1.5rem;
+            }
+            
+            .post-card {
+                padding: 1rem;
+            }
+            
+            .post-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        ::selection {
+            background: #4a90a4;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome to My Blog</h1>
-        <nav>
-            <a href="#about">About</a>
-            <a href="#posts">Posts</a>
-        </nav>
-    </header>
-    
-    <main>
-        <section id="about">
-            <h2>About Me</h2>
-            <p>This is my personal blog deployed using Infrastructure as Code!</p>
-        </section>
-        
-        <section id="posts">
-            <h2>Latest Posts</h2>
-            <article>
-                <h3>My First Post</h3>
-                <p>Welcome to my blog deployed via GitHub Actions and Azure Static Web Apps!</p>
-            </article>
-        </section>
-    </main>
+    <div class="container">
+        <header class="header">
+            <h1>My DevOps Learning Journey</h1>
+            <div class="subtitle">From sysadmin to Infrastructure as Code - sharing every step of the way</div>
+        </header>
+
+        <main class="content">
+            <section class="intro-section">
+                <h2>Welcome to My Blog</h2>
+                <p>I'm a security engineer who's spent almost 25 years in IT, bouncing around roles like Helpdesk Support, Exchange Admin, Datacenter Admin, Business Intelligence, and IT Ops Sysadmin. Along the way, I've developed a healthy respect - and love - for automation. In fact, I once automated myself out of a job (which turned out to be the best thing that could have happened!).</p>
+                <p>Working with our DevOps team recently, they introduced me to the concepts of Infrastructure as Code and CI/CD pipelines. Sure, I'd heard those terms countless times over the years, but I finally decided to stop nodding along and actually understand what they meant. This blog chronicles that journey.</p>
+                <p>If you're curious about IaC but feeling intimidated, or if you're already on your own DevOps adventure, I hope my experiences help you along the way. After 25 years in this industry, I'm still learning new things every day - and that's exactly what keeps it interesting!</p>
+            </section>
+
+            <section class="posts-section">
+                <h2>Latest Posts</h2>
+                
+                <div class="posts-grid">
+                    <!-- First Blog Post -->
+                    <article class="post-card">
+                        <div class="post-meta">
+                            <span class="post-date">May 28, 2025</span>
+                            <span class="post-category">Infrastructure as Code</span>
+                        </div>
+                        <h3><a href="posts/building-my-blog.html">From Zero to Live: Building My Blog with Infrastructure as Code</a></h3>
+                        <p class="post-excerpt">How I went from "what's a pipeline?" to deploying a live website with Azure Static Web Apps, GitHub Actions, and Bicep templates. Spoiler alert: it's not as scary as you think, and the mistakes make the best learning opportunities.</p>
+                        <a href="posts/building-my-blog.html" class="read-more">Read full post</a>
+                    </article>
+
+                    <!-- Coming Soon Posts -->
+                    <article class="coming-soon">
+                        <h3>Phase 2: Adding Backend Magic</h3>
+                        <p>Coming soon: Adding Azure Functions and Cosmos DB to create dynamic functionality. Because static sites are just the beginning!</p>
+                    </article>
+
+                    <article class="coming-soon">
+                        <h3>Multiple Environments: Dev, Staging, Production</h3>
+                        <p>Coming soon: Setting up proper environment promotion workflows and learning why "it works on my machine" isn't good enough.</p>
+                    </article>
+
+                    <article class="coming-soon">
+                        <h3>Monitoring and Observability</h3>
+                        <p>Coming soon: Adding Application Insights and learning what my infrastructure is actually doing in the wild.</p>
+                    </article>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p><strong>About the Author:</strong> Sysadmin turned security engineer with a passion for automation and a healthy respect for the power of Infrastructure as Code.</p>
+            <p>Have questions about my journey or want to share your own experiences? Feel free to reach out!</p>
+            <div class="social-links">
+                <a href="https://github.com/your-username" target="_blank">GitHub</a>
+                <a href="https://linkedin.com/in/your-profile" target="_blank">LinkedIn</a>
+                <a href="mailto:your-email@example.com">Email</a>
+            </div>
+        </footer>
+    </div>
+
+    <button class="back-to-top" onclick="scrollToTop()" aria-label="Back to top">↑</button>
+
+    <script>
+        // Back to top button functionality
+        window.addEventListener('scroll', function() {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for anchor links
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

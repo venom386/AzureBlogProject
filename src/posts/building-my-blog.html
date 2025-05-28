@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Zero to Live: Building My Blog with Infrastructure as Code</title>
+    <meta name="description" content="How I went from 'what's a pipeline?' to deploying a live website - and why you should try it too">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #4f7cba 0%, #5a7484 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            top: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='m0 40l40-40h-40v40zm40 0v-40h-40l40 40z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-style: italic;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 2.5rem;
+        }
+
+        .meta-info {
+            background: #f8f9fa;
+            border-left: 4px solid #4a90a4;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95rem;
+            color: #5a6c7d;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #4a90a4;
+            position: relative;
+        }
+
+        h3 {
+            color: #34495e;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 2rem 0 0.75rem;
+        }
+
+        p {
+            margin-bottom: 1.25rem;
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        em {
+            color: #5a6c7d;
+            font-style: italic;
+        }
+
+        code {
+            background: #f1f3f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+            color: #d73a49;
+        }
+
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-left: 4px solid #4a90a4;
+            position: relative;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.9rem;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #4a90a4, #5a7484);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .highlight-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .highlight-box p {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0;
+        }
+
+        .resources-grid {
+            display: grid;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .resource-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 3px solid #4a90a4;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .resource-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 144, 164, 0.15);
+        }
+
+        .resource-item strong {
+            color: #4a90a4;
+        }
+
+        ul, ol {
+            margin: 1rem 0 1.5rem 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        a {
+            color: #4a90a4;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: #3a7a8a;
+            text-decoration: underline;
+        }
+
+        .divider {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4a90a4, transparent);
+            margin: 3rem 0;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            color: #5a6c7d;
+            font-style: italic;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #4a90a4;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(74, 144, 164, 0.3);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(74, 144, 164, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                top: 1rem;
+                border-radius: 8px;
+            }
+            
+            .header {
+                padding: 2rem 1.5rem 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            pre {
+                padding: 1rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Selection styling */
+        ::selection {
+            background: #4a90a4;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>From Zero to Live: Building My Blog with Infrastructure as Code</h1>
+            <div class="subtitle">How I went from "what's a pipeline?" to deploying a live website - and why you should try it too</div>
+        </header>
+
+        <main class="content">
+            <div class="meta-info">
+                <strong>What you'll learn:</strong> A real-world journey from IaC beginner to deployed blog, including the mistakes, victories, and practical steps that got me there.
+            </div>
+
+            <p>Three weeks ago, if you had told me I'd be writing a blog post about Infrastructure as Code (IaC), I would have laughed. Not because I didn't want to learn it, but because it seemed like this mysterious, complex thing that only seasoned DevOps engineers could master.</p>
+
+            <p>I was wrong. Very wrong.</p>
+
+            <p>This blog you're reading right now? It's deployed using Azure Static Web Apps, managed with Bicep templates, and automatically deployed through GitHub Actions. And honestly, if I can build this, anyone can.</p>
+
+            <h2>Why I Decided to Take the Plunge</h2>
+
+            <p>I've been working on various development projects using my Azure free credits, but I was getting tired of clicking through the Azure portal every time I wanted to deploy something. More importantly, I kept hearing about Infrastructure as Code from our DevOps team at work, and I wanted to understand what they were talking about when they mentioned "pipelines" and "deployment automation."</p>
+
+            <p>The final push came when one of our DevOps engineers (shoutout to you if you're reading this!) explained how IaC could save me hours of manual work while making my deployments more reliable. He was right, but the learning curve felt intimidating.</p>
+
+            <p>I decided to start with a personal blog project - something visible and rewarding that would force me to learn the fundamentals without the pressure of a work deadline.</p>
+
+            <h2>The Stack: Keeping It Simple but Powerful</h2>
+
+            <p>After some research, I settled on a stack that seemed approachable for a beginner:</p>
+
+            <ul>
+                <li><strong>Azure Static Web Apps</strong> - Perfect for hosting static sites with built-in CI/CD</li>
+                <li><strong>GitHub Actions</strong> - Automation platform I already knew existed</li>
+                <li><strong>Bicep</strong> - Azure's domain-specific language for IaC (supposedly easier than ARM templates)</li>
+                <li><strong>GitHub</strong> - Where my code already lived</li>
+            </ul>
+
+            <p>The beauty of this setup? Everything integrates naturally, and most of it is free for personal projects.</p>
+
+            <h2>Setting Up the Foundation</h2>
+
+            <h3>The Service Principal Dance</h3>
+
+            <p>Before diving into code, I needed to set up authentication between GitHub and Azure. This involves creating a "service principal" - essentially a robot user that GitHub can use to deploy resources on your behalf.</p>
+
+            <pre><code>az ad sp create-for-rbac \
+  --name "github-actions-personal-blog" \
+  --role contributor \
+  --scopes /subscriptions/{your-subscription-id} \
+  --sdk-auth</code></pre>
+
+            <p>The output is a JSON blob that goes into your GitHub repository secrets as <code>AZURE_CREDENTIALS</code>. Simple enough, though it took me a few tries to get the permissions right.</p>
+
+            <h3>Repository Structure</h3>
+
+            <p>I organized my project like this:</p>
+            <pre><code>my-blog/
+├── .github/workflows/deploy.yml    # The automation magic
+├── infrastructure/main.bicep       # Infrastructure definition
+├── src/index.html                  # The actual blog content
+└── README.md                       # Documentation</code></pre>
+
+            <p>Clean and straightforward - exactly what you want when learning something new.</p>
+
+            <h2>The Real Learning: When Things Go Wrong</h2>
+
+            <h3>Challenge #1: Decoding GitHub Actions Logs</h3>
+
+            <p>My first deployment failed spectacularly. The GitHub Actions log showed this cryptic error:</p>
+
+            <pre><code>ERROR: "RepositoryUrl is invalid. The repository url must use HTTPS."</code></pre>
+
+            <p>At first, I panicked. Then I realized this was exactly the kind of problem-solving that makes you a better developer. I started reading the logs more carefully and discovered that GitHub's <code>github.repositoryUrl</code> variable returns an SSH URL (<code>git@github.com:user/repo.git</code>), but Azure Static Web Apps expects HTTPS (<code>https://github.com/user/repo.git</code>).</p>
+
+            <p><strong>The fix was simple:</strong></p>
+            <pre><code># Convert SSH URL to HTTPS format
+REPO_URL="https://github.com/${{ github.repository }}.git"</code></pre>
+
+            <div class="highlight-box">
+                <p><strong>The lesson was valuable:</strong> Error messages aren't scary - they're clues. Learning to read deployment logs is a superpower.</p>
+            </div>
+
+            <h3>Challenge #2: Security Warnings</h3>
+
+            <p>My Bicep template initially had these outputs:</p>
+            <pre><code>output repositoryToken string = staticWebApp.listSecrets().properties.repositoryToken
+output deploymentToken string = staticWebApp.listSecrets().properties.apiKey</code></pre>
+
+            <p>The deployment warned me that outputs shouldn't contain secrets. Fair point! I learned to retrieve secrets during the deployment process instead of exposing them in template outputs.</p>
+
+            <p>These weren't roadblocks - they were learning opportunities that made me understand the security considerations behind IaC.</p>
+
+            <h2>The Bicep Template: Infrastructure as Code in Action</h2>
+
+            <p>Here's the core of my infrastructure definition:</p>
+
+            <pre><code>resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
+  name: staticWebAppName
+  location: location
+  sku: {
+    name: 'Free'
+    tier: 'Free'
+  }
+  properties: {
+    repositoryUrl: repositoryUrl
+    branch: branch
+    buildProperties: {
+      appLocation: appLocation
+      apiLocation: apiLocation
+      outputLocation: outputLocation
+    }
+    stagingEnvironmentPolicy: 'Enabled'
+  }
+}</code></pre>
+
+            <p>What I love about this: it's declarative. I'm describing <em>what</em> I want, not <em>how</em> to create it. Azure figures out the implementation details.</p>
+
+            <h2>The GitHub Actions Pipeline: Automation Magic</h2>
+
+            <p>My deployment workflow does three main things:</p>
+
+            <ol>
+                <li><strong>Validates</strong> the infrastructure before deploying</li>
+                <li><strong>Deploys</strong> the Azure resources</li>
+                <li><strong>Publishes</strong> the website content</li>
+            </ol>
+
+            <p>The validation step was a game-changer for me:</p>
+            <pre><code>- name: What-If Analysis
+  run: |
+    az deployment group what-if \
+      --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+      --template-file infrastructure/main.bicep \
+      --parameters repositoryUrl="$REPO_URL"</code></pre>
+
+            <p>This shows exactly what changes will be made before making them. It's like having a safety net for your infrastructure changes.</p>
+
+            <h2>The Moment of Truth</h2>
+
+            <p>After fixing those initial hiccups, I pushed my code to the main branch and watched the GitHub Actions tab like a hawk.</p>
+
+            <p>Green checkmarks across the board.</p>
+
+            <p>Then I clicked the deployment URL and saw my blog live on the internet with an SSL certificate and everything. That feeling of seeing your code running in the cloud? Absolutely incredible.</p>
+
+            <h2>What I Actually Learned</h2>
+
+            <h3>Technical Skills</h3>
+            <ul>
+                <li><strong>Bicep syntax</strong> and Azure resource definitions</li>
+                <li><strong>GitHub Actions</strong> workflow design and troubleshooting</li>
+                <li><strong>Azure Static Web Apps</strong> configuration and deployment</li>
+                <li><strong>Infrastructure validation</strong> and what-if analysis</li>
+                <li><strong>Security best practices</strong> for secrets and authentication</li>
+            </ul>
+
+            <h3>Mindset Shifts</h3>
+            <ul>
+                <li><strong>Infrastructure as Code isn't magic</strong> - it's just configuration files that get executed</li>
+                <li><strong>Error messages are helpful</strong> when you take time to read them carefully</li>
+                <li><strong>Iteration is normal</strong> - nobody gets deployments right on the first try</li>
+                <li><strong>Documentation matters</strong> - future you will thank present you</li>
+            </ul>
+
+            <h2>Resources That Made This Possible</h2>
+
+            <p>I couldn't have done this without some excellent learning materials:</p>
+
+            <div class="resources-grid">
+                <div class="resource-item">
+                    <strong>Microsoft Learn's Bicep modules</strong> - Comprehensive but approachable
+                </div>
+                <div class="resource-item">
+                    <strong>GitHub Actions documentation</strong> - Better than I expected for getting started
+                </div>
+                <div class="resource-item">
+                    <strong>Azure Static Web Apps quickstarts</strong> - Perfect for understanding the basics
+                </div>
+                <div class="resource-item">
+                    <strong><a href="https://www.youtube.com/@PetterTech" target="_blank">PetterTech on YouTube</a></strong> - Excellent, easy-to-understand content around DevOps and development concepts with a specific focus on Azure
+                </div>
+                <div class="resource-item">
+                    <strong>Our DevOps team at work</strong> - Patient mentoring makes all the difference
+                </div>
+            </div>
+
+            <p>Special thanks to my own personal Brent who introduced me to these concepts and encouraged me to dive in. Having someone to ask "probably dumb" questions made this journey so much smoother.</p>
+
+            <h2>What's Next: Phase 2 and Beyond</h2>
+
+            <p>This blog is just the beginning. I'm already planning to add:</p>
+
+            <ul>
+                <li><strong>Azure Functions</strong> for dynamic functionality (contact forms, visitor counters)</li>
+                <li><strong>Multiple environments</strong> (dev/staging/production) with promotion workflows</li>
+                <li><strong>Monitoring and analytics</strong> with Application Insights</li>
+                <li><strong>Custom domain</strong> setup and advanced deployment strategies</li>
+            </ul>
+
+            <p>The foundation is solid, and adding features will be an opportunity to learn more advanced IaC patterns.</p>
+
+            <h2>Why You Should Try This Too</h2>
+
+            <p>If you're a developer who's been curious about DevOps but felt intimidated, I want to tell you something: <strong>you already have most of the skills you need</strong>.</p>
+
+            <p>You understand code structure, debugging, and problem-solving. IaC is just applying those same skills to infrastructure management. The concepts that seemed foreign three weeks ago now feel like natural extensions of development practices I already knew.</p>
+
+            <p>And if you're not a developer - if you're a sysadmin like me who's transitioned into security engineering, spending your days wrangling PowerShell scripts and Python automation - <strong>you're actually closer than you think</strong>. Every time you've automated a repetitive task, standardized a deployment process, or written a script to configure multiple servers consistently, you've been thinking in Infrastructure as Code principles. You just didn't call it that.</p>
+
+            <p>The jump from "I automate my daily tasks" to "I define my infrastructure in code" is smaller than it appears. You already understand the pain points IaC solves because you've lived them.</p>
+
+            <p><strong>Start small.</strong> Pick a simple project like a static website. Use the free tiers. Break things. Fix them. Learn from the error messages.</p>
+
+            <p>Most importantly, <strong>don't let perfect be the enemy of good</strong>. My first deployment failed. My Bicep template had security warnings. My workflow needed multiple iterations. That's not failure - that's learning.</p>
+
+            <h2>The Real Victory</h2>
+
+            <p>The best part about this project isn't the working blog (though I'm pretty proud of it). It's the confidence that comes from demystifying something that seemed impossibly complex just a few weeks ago.</p>
+
+            <p>Now when our DevOps team talks about deployment pipelines and infrastructure automation, I don't just nod along - I actually understand what they're discussing. Better yet, I can contribute to those conversations.</p>
+
+            <div class="highlight-box">
+                <p><strong>That's the real power of hands-on learning.</strong></p>
+            </div>
+
+            <hr class="divider">
+        </main>
+
+        <footer class="footer">
+            <p><em>This blog is deployed using the exact process described in this post. You can find the complete source code and infrastructure templates on <a href="#" target="_blank">GitHub</a>. If you decide to build your own IaC project, I'd love to hear about your experience - the struggles, the victories, and everything in between.</em></p>
+            <p><em>Have questions about getting started with Infrastructure as Code? Feel free to reach out. We're all learning together.</em></p>
+        </footer>
+    </div>
+
+    <button class="back-to-top" onclick="scrollToTop()" aria-label="Back to top">↑</button>
+
+    <script>
+        // Back to top button functionality
+        window.addEventListener('scroll', function() {
+            const backToTop = document.querySelector('.back-to-top');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for anchor links
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
