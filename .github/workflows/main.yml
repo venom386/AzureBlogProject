@@ -3,7 +3,7 @@ name: Deploy Personal Blog Infrastructure
 on:
   push:
     branches: [main]
-    paths: ['infrastructure/**', '.github/workflows/**']
+    paths: ['infrastructure/**', '.github/workflows/**', '.deploy']
   pull_request:
     branches: [main]
     paths: ['infrastructure/**']
